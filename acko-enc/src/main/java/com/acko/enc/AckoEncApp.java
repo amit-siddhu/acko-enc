@@ -65,7 +65,7 @@ public class AckoEncApp {
 		fos.close();
 	}
 
-	public String encryptText(String msg, PrivateKey key)
+	public String encryptText(String msg, PublicKey key)
 			throws NoSuchAlgorithmException, NoSuchPaddingException,
 			UnsupportedEncodingException, IllegalBlockSizeException,
 			BadPaddingException, InvalidKeyException {
@@ -73,7 +73,7 @@ public class AckoEncApp {
 		return Base64.encodeBase64String(cipher.doFinal(msg.getBytes("UTF-8")));
 	}
 
-	public String decryptText(String msg, PublicKey key)
+	public String decryptText(String msg, PrivateKey key)
 			throws InvalidKeyException, UnsupportedEncodingException,
 			IllegalBlockSizeException, BadPaddingException {
 		this.cipher.init(Cipher.DECRYPT_MODE, key);
@@ -94,8 +94,8 @@ public class AckoEncApp {
 		PublicKey publicKey = ac.getPublic("KeyPair/publicKey");
 
 		String msg = "Acko Confidential Message!";
-		String encrypted_msg = ac.encryptText(msg, privateKey);
-		String decrypted_msg = ac.decryptText(encrypted_msg, publicKey);
+		String encrypted_msg = ac.encryptText(msg, publicKey);
+		String decrypted_msg = ac.decryptText(encrypted_msg, privateKey);
 		System.out.println("Original Message: " + msg +
 			"\nEncrypted Message: " + encrypted_msg
 			+ "\nDecrypted Message: " + decrypted_msg);
