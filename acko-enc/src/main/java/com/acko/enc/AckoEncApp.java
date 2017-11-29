@@ -14,13 +14,13 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-import org.apache.commons.codec.binary.Base64;
 
 public class AckoEncApp {
 	private Cipher cipher;
@@ -70,14 +70,14 @@ public class AckoEncApp {
 			UnsupportedEncodingException, IllegalBlockSizeException,
 			BadPaddingException, InvalidKeyException {
 		this.cipher.init(Cipher.ENCRYPT_MODE, key);
-		return Base64.encodeBase64String(cipher.doFinal(msg.getBytes("UTF-8")));
+		return Base64.getEncoder().encodeToString(cipher.doFinal(msg.getBytes("UTF-8")));
 	}
 
 	public String decryptText(String msg, PrivateKey key)
 			throws InvalidKeyException, UnsupportedEncodingException,
 			IllegalBlockSizeException, BadPaddingException {
 		this.cipher.init(Cipher.DECRYPT_MODE, key);
-		return new String(cipher.doFinal(Base64.decodeBase64(msg)), "UTF-8");
+		return new String(cipher.doFinal(Base64.getDecoder().decode(msg)), "UTF-8");
 	}
 
 	public byte[] getFileInBytes(File f) throws IOException {
