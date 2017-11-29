@@ -32,7 +32,7 @@ public class AckoEncApp {
 	// https://docs.oracle.com/javase/8/docs/api/java/security/spec/PKCS8EncodedKeySpec.html
 	public PrivateKey getPrivate(String filename) throws Exception {
 		byte[] keyBytes = Files.readAllBytes(new File(filename).toPath());
-		PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
+		PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(Base64.getMimeDecoder().decode(keyBytes));
 		KeyFactory kf = KeyFactory.getInstance("RSA");
 		return kf.generatePrivate(spec);
 	}
@@ -40,7 +40,7 @@ public class AckoEncApp {
 	// https://docs.oracle.com/javase/8/docs/api/java/security/spec/X509EncodedKeySpec.html
 	public PublicKey getPublic(String filename) throws Exception {
 		byte[] keyBytes = Files.readAllBytes(new File(filename).toPath());
-		X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
+		X509EncodedKeySpec spec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(keyBytes));
 		KeyFactory kf = KeyFactory.getInstance("RSA");
 		return kf.generatePublic(spec);
 	}
@@ -90,8 +90,8 @@ public class AckoEncApp {
 
 	public static void main(String[] args) throws Exception {
 		AckoEncApp ac = new AckoEncApp();
-		PrivateKey privateKey = ac.getPrivate("KeyPair/privateKey");
-		PublicKey publicKey = ac.getPublic("KeyPair/publicKey");
+		PrivateKey privateKey = ac.getPrivate("KeyPair/privateKey.pem");
+		PublicKey publicKey = ac.getPublic("KeyPair/publicKey.pem");
 
 		String msg = "Acko Confidential Message!";
 		String encrypted_msg = ac.encryptText(msg, publicKey);
