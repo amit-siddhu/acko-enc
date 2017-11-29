@@ -9,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Base64;
 
 public class GenerateKeys {
 
@@ -51,8 +52,14 @@ public class GenerateKeys {
 		try {
 			gk = new GenerateKeys(1024);
 			gk.createKeys();
-			gk.writeToFile("KeyPair/publicKey", gk.getPublicKey().getEncoded());
-			gk.writeToFile("KeyPair/privateKey", gk.getPrivateKey().getEncoded());
+			gk.writeToFile(
+				"KeyPair/publicKey.pem",
+				Base64.getMimeEncoder().encode(gk.getPublicKey().getEncoded())
+			);
+			gk.writeToFile(
+				"KeyPair/privateKey.pem",
+				Base64.getMimeEncoder().encode(gk.getPrivateKey().getEncoded())
+			);
 		} catch (NoSuchAlgorithmException | NoSuchProviderException e) {
 			System.err.println(e.getMessage());
 		} catch (IOException e) {
