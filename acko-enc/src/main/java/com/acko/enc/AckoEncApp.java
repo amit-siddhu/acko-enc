@@ -19,7 +19,8 @@ import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
+import org.bouncycastle.util.io.pem.PemReader;
+import org.bouncycastle.util.io.pem.PemObject;
 
 public class AckoEncApp {
 
@@ -35,16 +36,20 @@ public class AckoEncApp {
 
 	// https://docs.oracle.com/javase/8/docs/api/java/security/spec/PKCS8EncodedKeySpec.html
 	public PrivateKey getPrivate(String filename) throws Exception {
-		byte[] keyBytes = Files.readAllBytes(new File(filename).toPath());
-		PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(Base64.getMimeDecoder().decode(keyBytes));
+		PemReader reader = new PemReader(Files.newBufferedReader(new File(filename).toPath()));
+		PemObject pemObject = reader.readPemObject();
+        reader.close();
+		PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(pemObject.getContent());
 		KeyFactory kf = KeyFactory.getInstance("RSA");
 		return kf.generatePrivate(spec);
 	}
 
 	// https://docs.oracle.com/javase/8/docs/api/java/security/spec/X509EncodedKeySpec.html
 	public PublicKey getPublic(String filename) throws Exception {
-		byte[] keyBytes = Files.readAllBytes(new File(filename).toPath());
-		X509EncodedKeySpec spec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(keyBytes));
+		PemReader reader = new PemReader(Files.newBufferedReader(new File(filename).toPath()));
+		PemObject pemObject = reader.readPemObject();
+        reader.close();
+		X509EncodedKeySpec spec = new X509EncodedKeySpec(pemObject.getContent());
 		KeyFactory kf = KeyFactory.getInstance("RSA");
 		return kf.generatePublic(spec);
 	}
