@@ -2,14 +2,19 @@ package com.acko.enc;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Base64;
+
+import org.bouncycastle.util.io.pem.PemWriter;
+import org.bouncycastle.util.io.pem.PemObject;
 
 public class GenerateKeys {
 
@@ -37,14 +42,12 @@ public class GenerateKeys {
 		return this.publicKey;
 	}
 
-	public void writeToFile(String path, byte[] key) throws IOException {
-		File f = new File(path);
+	public void writeToFile(String filepath, Key key, String description) throws IOException {
+		File f = new File(filepath);
 		f.getParentFile().mkdirs();
-
-		FileOutputStream fos = new FileOutputStream(f);
-		fos.write(key);
-		fos.flush();
-		fos.close();
+		PemWriter pemWriter = new PemWriter(new OutputStreamWriter(new FileOutputStream(f)));
+		pemWriter.writeObject(new PemObject(description, key.getEncoded()));
+		pemWriter.close();
 	}
 
 	public static void main(String[] args) {
@@ -52,20 +55,12 @@ public class GenerateKeys {
 		try {
 			gk = new GenerateKeys(512);
 			gk.createKeys();
-			gk.writeToFile(
-				"KeyPair/publicKey.pem",
-				Base64.getMimeEncoder().encode(gk.getPublicKey().getEncoded())
-			);
-			gk.writeToFile(
-				"KeyPair/privateKey.pem",
-				Base64.getMimeEncoder().encode(gk.getPrivateKey().getEncoded())
-			);
+			gk.writeToFile("KeyPair/publicKey.pem",	gk.getPublicKey(), "RSA PUBLIC KEY");
+			gk.writeToFile("KeyPair/privateKey.pem", gk.getPrivateKey(), "RSA PRIVATE KEY");
 		} catch (NoSuchAlgorithmException | NoSuchProviderException e) {
 			System.err.println(e.getMessage());
 		} catch (IOException e) {
 			System.err.println(e.getMessage());
 		}
-
 	}
-
 }
