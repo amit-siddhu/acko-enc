@@ -50,7 +50,7 @@ public class GenerateKeys {
 	public static void main(String[] args) {
 		GenerateKeys gk;
 		try {
-			gk = new GenerateKeys(1024);
+			gk = new GenerateKeys(512);
 			gk.createKeys();
 			gk.writeToFile(
 				"KeyPair/publicKey.pem",
