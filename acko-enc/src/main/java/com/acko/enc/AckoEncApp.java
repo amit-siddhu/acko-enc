@@ -1,29 +1,33 @@
 package com.acko.enc;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
-import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.Signature;
+import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PSSParameterSpec;
 import java.util.Base64;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 
 public class AckoEncApp {
+
 	private Cipher cipher;
+
+	static {
+		Security.addProvider(new BouncyCastleProvider());
+	}
 
 	public AckoEncApp() throws NoSuchAlgorithmException, NoSuchPaddingException {
 		this.cipher = Cipher.getInstance("RSA");
@@ -45,69 +49,43 @@ public class AckoEncApp {
 		return kf.generatePublic(spec);
 	}
 
-	public void encryptFile(byte[] input, File output, PrivateKey key)
-		throws IOException, GeneralSecurityException {
-		this.cipher.init(Cipher.ENCRYPT_MODE, key);
-		writeToFile(output, this.cipher.doFinal(input));
+	public String signMessage(String msg, PrivateKey key) throws Exception {
+		Signature privateSignature = Signature.getInstance("SHA256WithRSA/PSS", "BC");
+		MGF1ParameterSpec mgf1ParameterSpec = new MGF1ParameterSpec("SHA-256");
+		PSSParameterSpec pssParameterSpec = new PSSParameterSpec("SHA-256", "MGF1", mgf1ParameterSpec , 16, 1);
+		privateSignature.setParameter(pssParameterSpec);
+		privateSignature.initSign(key);
+		privateSignature.update(msg.getBytes("UTF-8"));
+	    byte[] signature = privateSignature.sign();
+		return Base64.getEncoder().encodeToString(signature);
 	}
 
-	public void decryptFile(byte[] input, File output, PublicKey key)
-		throws IOException, GeneralSecurityException {
-		this.cipher.init(Cipher.DECRYPT_MODE, key);
-		writeToFile(output, this.cipher.doFinal(input));
-	}
-
-	private void writeToFile(File output, byte[] toWrite)
-			throws IllegalBlockSizeException, BadPaddingException, IOException {
-		FileOutputStream fos = new FileOutputStream(output);
-		fos.write(toWrite);
-		fos.flush();
-		fos.close();
-	}
-
-	public String encryptText(String msg, PublicKey key)
-			throws NoSuchAlgorithmException, NoSuchPaddingException,
-			UnsupportedEncodingException, IllegalBlockSizeException,
-			BadPaddingException, InvalidKeyException {
-		this.cipher.init(Cipher.ENCRYPT_MODE, key);
-		return Base64.getEncoder().encodeToString(cipher.doFinal(msg.getBytes("UTF-8")));
-	}
-
-	public String decryptText(String msg, PrivateKey key)
-			throws InvalidKeyException, UnsupportedEncodingException,
-			IllegalBlockSizeException, BadPaddingException {
-		this.cipher.init(Cipher.DECRYPT_MODE, key);
-		return new String(cipher.doFinal(Base64.getDecoder().decode(msg)), "UTF-8");
-	}
-
-	public byte[] getFileInBytes(File f) throws IOException {
-		FileInputStream fis = new FileInputStream(f);
-		byte[] fbytes = new byte[(int) f.length()];
-		fis.read(fbytes);
-		fis.close();
-		return fbytes;
+	public boolean verifyMessage(String msg, String signature, PublicKey key) throws Exception {
+		Signature publicSignature = Signature.getInstance("SHA256WithRSA/PSS", "BC");
+		MGF1ParameterSpec mgf1ParameterSpec = new MGF1ParameterSpec("SHA-256");
+		PSSParameterSpec pssParameterSpec = new PSSParameterSpec("SHA-256", "MGF1", mgf1ParameterSpec , 16, 1);
+		publicSignature.setParameter(pssParameterSpec);
+		publicSignature.initVerify(key);
+		publicSignature.update(msg.getBytes("UTF-8"));
+		byte[] signatureBytes = Base64.getDecoder().decode(signature);
+		return publicSignature.verify(signatureBytes);
 	}
 
 	public static void main(String[] args) throws Exception {
+		if (!(new File("KeyPair/privateKey.pem").exists()
+				&& new File("KeyPair/publicKey.pem").exists())) {
+			System.out.println("Generate key-pair first.");
+			System.exit(1);
+		}
 		AckoEncApp ac = new AckoEncApp();
 		PrivateKey privateKey = ac.getPrivate("KeyPair/privateKey.pem");
 		PublicKey publicKey = ac.getPublic("KeyPair/publicKey.pem");
-
 		String msg = "Acko Confidential Message!";
-		String encrypted_msg = ac.encryptText(msg, publicKey);
-		String decrypted_msg = ac.decryptText(encrypted_msg, privateKey);
-		System.out.println("Original Message: " + msg +
-			"\nEncrypted Message: " + encrypted_msg
-			+ "\nDecrypted Message: " + decrypted_msg);
+		String signature = ac.signMessage(msg, privateKey);
+		boolean varified = ac.verifyMessage(msg, signature, publicKey);
 
-		if (new File("KeyPair/text.txt").exists()) {
-			ac.encryptFile(ac.getFileInBytes(new File("KeyPair/text.txt")),
-				new File("KeyPair/text_encrypted.txt"),privateKey);
-			ac.decryptFile(ac.getFileInBytes(new File("KeyPair/text_encrypted.txt")),
-				new File("KeyPair/text_decrypted.txt"), publicKey);
-		} else {
-			System.out.println("Create a file text.txt under folder KeyPair");
-		}
+		System.out.println("Original Message: " + msg
+			+  "\nMessage Signature: " + signature
+			+ "\nSignature Varified: " + varified);
 	}
 }
-
