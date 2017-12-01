@@ -34,7 +34,7 @@ import org.json.JSONObject;
 
 public class AckoEncApp {
 
-	public static final String API_URL = "http://127.0.0.1:8006/api";
+	public static final String API_URL = "https://shire.acko.com/api";
 	private Cipher cipher;
 
 	static {
@@ -109,7 +109,7 @@ public class AckoEncApp {
 		}
 		in.close();
 
-		return output;
+		return response.toString();
 	}
 
 	public Map createPackage(String b64msg, String signature) {
@@ -162,7 +162,7 @@ public class AckoEncApp {
 		PrivateKey privateKey = ac.getPrivate("KeyPair/privateKey.pem");
 		PublicKey publicKey = ac.getPublic("KeyPair/publicKey.pem");
 
-		Map dataMap = ac.view();
+		Map dataMap = ac.book();
 		JSONObject jsonData = new JSONObject(dataMap);
 
 		String msg = jsonData.toString();
@@ -172,7 +172,7 @@ public class AckoEncApp {
 		Map requestMap = ac.createPackage(b64msg, signature);
 		String requestData = new JSONObject(requestMap).toString();
 
-		String resourcePath = "/ola_trip_detail";
+		String resourcePath = "/ola_trip_booked";
 
 		System.out.println("Original Message: " + msg
 			+  "\nEncoded Message: " + b64msg
